@@ -151,6 +151,25 @@ func TestFlush(t *testing.T) {
 	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
+func TestFullHouse(t *testing.T) {
+
+	testedHand := cards.DeckOf(
+		cards.CardOf(cards.Spades, cards.Two),
+		cards.CardOf(cards.Hearts, cards.Two),
+		cards.CardOf(cards.Diamonds, cards.Two),
+		cards.CardOf(cards.Clubs, cards.Five),
+		cards.CardOf(cards.Spades, cards.Five),
+	)
+	referenceHand := Hand{
+		handType: FullHouse,
+		comparison: []cards.Rank{
+			cards.Two,
+			cards.Five,
+		},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+}
+
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
 	recognisedHand, _ := hand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {
