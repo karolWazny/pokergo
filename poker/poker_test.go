@@ -207,6 +207,22 @@ func TestStraightFlush(t *testing.T) {
 	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
+func TestRoyalFlush(t *testing.T) {
+
+	testedHand := cards.DeckOf(
+		cards.CardOf(cards.Spades, cards.Ace),
+		cards.CardOf(cards.Spades, cards.King),
+		cards.CardOf(cards.Spades, cards.Jack),
+		cards.CardOf(cards.Spades, cards.Queen),
+		cards.CardOf(cards.Spades, cards.Ten),
+	)
+	referenceHand := Hand{
+		handType:   RoyalFlush,
+		comparison: []cards.Rank{},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+}
+
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
 	recognisedHand, _ := hand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {

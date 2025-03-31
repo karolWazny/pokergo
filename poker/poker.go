@@ -66,6 +66,12 @@ func hand(deck cards.Deck) (Hand, error) {
 	isFlush := isFlush(deck)
 	{
 		isStraight, occurrences := isStraight(occurrences)
+		if isStraight && isFlush && occurrences[0].Rank == cards.Ace {
+			return Hand{
+				handType:   RoyalFlush,
+				comparison: make([]cards.Rank, 0),
+			}, nil
+		}
 		if isStraight && isFlush {
 			return Hand{
 				handType:   StraightFlush,
