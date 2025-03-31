@@ -65,7 +65,8 @@ func hand(deck cards.Deck) (Hand, error) {
 	occurrences := buildOrderedOccurrencesSlice(deck)
 	{
 		// straight
-		if isStraight(occurrences) {
+		isStraight, occurrences := isStraight(occurrences)
+		if isStraight {
 			return Hand{
 				handType:   Straight,
 				comparison: []cards.Rank{occurrences[0].Rank},
@@ -89,15 +90,21 @@ func hand(deck cards.Deck) (Hand, error) {
 	}
 }
 
-func isStraight(occurrences []rankOccurrences) bool {
+func isStraight(occurrences []rankOccurrences) (bool, []rankOccurrences) {
 	isStraight := true
 	for i := range len(occurrences) - 1 {
+		if occurrences[i].Rank == cards.Ace && occurrences[i+1].Rank == cards.Five {
+			continue
+		}
 		if int(occurrences[i].Rank-occurrences[i+1].Rank) != 1 {
 			isStraight = false
 			break
 		}
 	}
-	return isStraight
+	if isStraight && occurrences[0].Rank == cards.Ace && occurrences[1].Rank == cards.Five {
+		return isStraight, append(occurrences[1:], occurrences[0])
+	}
+	return isStraight, occurrences
 }
 
 func buildOrderedOccurrencesSlice(deck cards.Deck) []rankOccurrences {

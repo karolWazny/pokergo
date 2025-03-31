@@ -112,6 +112,24 @@ func TestFiveCardsStraightWithoutAce(t *testing.T) {
 
 }
 
+func TestStraightWithLowAce(t *testing.T) {
+	testedHand := cards.DeckOf(
+		cards.CardOf(cards.Clubs, cards.Ace),
+		cards.CardOf(cards.Spades, cards.Two),
+		cards.CardOf(cards.Clubs, cards.Three),
+		cards.CardOf(cards.Hearts, cards.Four),
+		cards.CardOf(cards.Clubs, cards.Five),
+	)
+	referenceHand := Hand{
+		handType: Straight,
+		comparison: []cards.Rank{
+			cards.Five,
+		},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+
+}
+
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
 	recognisedHand, _ := hand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {
@@ -119,7 +137,7 @@ func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand
 	}
 	for i, rank := range referenceHand.comparison {
 		if rank != recognisedHand.comparison[i] {
-			t.Errorf("hand comparison[%d] should be %s (was %s)", i, rank.String(), referenceHand.comparison[i].String())
+			t.Errorf("hand comparison[%d] should be %s (was %s)", i, rank.String(), recognisedHand.comparison[i].String())
 		}
 	}
 }
