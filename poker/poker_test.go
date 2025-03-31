@@ -73,6 +73,26 @@ func TestFiveCardsTwoPair(t *testing.T) {
 	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
+func TestFiveCardsThreeOfAKind(t *testing.T) {
+	testedHand := cards.DeckOf(
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Spades, cards.Two),
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Hearts, cards.Jack),
+		cards.CardOf(cards.Clubs, cards.Ace),
+	)
+	referenceHand := Hand{
+		handType: ThreeOfAKind,
+		comparison: []cards.Rank{
+			cards.Two,
+			cards.Ace,
+			cards.Jack,
+		},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+
+}
+
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
 	recognisedHand := hand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {

@@ -78,6 +78,19 @@ func hand(deck cards.Deck) Hand {
 		return occurrences[i].Occurrences > occurrences[j].Occurrences
 	})
 	for i, occurrence := range occurrences {
+		// three of a kind
+		if occurrence.Occurrences == 3 {
+			kickers := occurrences[i+1:]
+			sort.Slice(kickers, func(i, j int) bool {
+				return kickers[i].Rank > kickers[j].Rank
+			})
+			comparison = make([]cards.Rank, 0)
+			comparison = append(comparison, occurrence.Rank)
+			for _, kicker := range kickers {
+				comparison = append(comparison, kicker.Rank)
+			}
+			return Hand{handType: ThreeOfAKind, comparison: comparison}
+		}
 		// some pairs
 		if occurrence.Occurrences == 2 {
 			// two pair
@@ -111,9 +124,5 @@ func hand(deck cards.Deck) Hand {
 
 	slices.Sort(comparison)
 	slices.Reverse(comparison)
-	if len(deck.Cards) > 1 && deck.Cards[0].Rank() == deck.Cards[1].Rank() {
-		slices.Reverse(comparison)
-		return Hand{handType: OnePair, comparison: comparison}
-	}
 	return Hand{handType: HighCard, comparison: comparison}
 }
