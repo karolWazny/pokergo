@@ -65,6 +65,9 @@ func hand(deck cards.Deck) (Hand, error) {
 	occurrences := buildOrderedOccurrencesSlice(deck)
 	isFlush := isFlush(deck)
 	{
+		if occurrences[0].Occurrences == 4 {
+			return buildHandWithKickers(occurrences, FourOfAKind), nil
+		}
 		// full house
 		if occurrences[0].Occurrences == 3 && occurrences[1].Occurrences == 2 {
 			return buildHandWithKickers(occurrences, FullHouse), nil

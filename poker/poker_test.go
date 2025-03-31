@@ -170,6 +170,25 @@ func TestFullHouse(t *testing.T) {
 	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
+func TestFourOfAKind(t *testing.T) {
+
+	testedHand := cards.DeckOf(
+		cards.CardOf(cards.Spades, cards.Two),
+		cards.CardOf(cards.Hearts, cards.Two),
+		cards.CardOf(cards.Diamonds, cards.Two),
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Spades, cards.Five),
+	)
+	referenceHand := Hand{
+		handType: FourOfAKind,
+		comparison: []cards.Rank{
+			cards.Two,
+			cards.Five,
+		},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+}
+
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
 	recognisedHand, _ := hand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {
