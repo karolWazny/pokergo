@@ -5,33 +5,28 @@ import (
 	"testing"
 )
 
-func TestOneCard(t *testing.T) {
+func TestFiveCardsHighCard(t *testing.T) {
 	testedHand := cards.DeckOf(
-		cards.CardOf(cards.Clubs, cards.Ace),
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Spades, cards.King),
+		cards.CardOf(cards.Spades, cards.Five),
+		cards.CardOf(cards.Spades, cards.Seven),
+		cards.CardOf(cards.Diamonds, cards.Jack),
 	)
 	referenceHand := Hand{
 		handType:   HighCard,
-		comparison: []cards.Rank{cards.Ace},
+		comparison: []cards.Rank{cards.King, cards.Jack, cards.Seven, cards.Five, cards.Two},
 	}
 	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
-func TestTwoCardsHighCard(t *testing.T) {
-	testedHand := cards.DeckOf(
-		cards.CardOf(cards.Clubs, cards.Two), cards.CardOf(cards.Spades, cards.King),
-	)
-	referenceHand := Hand{
-		handType:   HighCard,
-		comparison: []cards.Rank{cards.King, cards.Two},
-	}
-	testPokerHandRecognition(t, testedHand, referenceHand)
-}
-
-func TestThreeCardsOnePair(t *testing.T) {
+func TestFiveCardsOnePair(t *testing.T) {
 	testedHand := cards.DeckOf(
 		cards.CardOf(cards.Clubs, cards.Two),
 		cards.CardOf(cards.Spades, cards.Two),
 		cards.CardOf(cards.Clubs, cards.Ace),
+		cards.CardOf(cards.Diamonds, cards.Three),
+		cards.CardOf(cards.Hearts, cards.Jack),
 	)
 	referenceHand := Hand{
 		handType:   OnePair,
@@ -42,12 +37,18 @@ func TestThreeCardsOnePair(t *testing.T) {
 
 func TestThreeCardsOnePairWithLameKicker(t *testing.T) {
 	testedHand := cards.DeckOf(
-		cards.CardOf(cards.Clubs, cards.Two), cards.CardOf(cards.Spades, cards.Ace), cards.CardOf(cards.Clubs, cards.Ace),
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Spades, cards.Ace),
+		cards.CardOf(cards.Clubs, cards.Ace),
+		cards.CardOf(cards.Diamonds, cards.Three),
+		cards.CardOf(cards.Hearts, cards.Five),
 	)
 	referenceHand := Hand{
 		handType: OnePair,
 		comparison: []cards.Rank{
 			cards.Ace,
+			cards.Five,
+			cards.Three,
 			cards.Two,
 		},
 	}
@@ -93,13 +94,31 @@ func TestFiveCardsThreeOfAKind(t *testing.T) {
 
 }
 
+func TestFiveCardsStraightWithoutAce(t *testing.T) {
+	testedHand := cards.DeckOf(
+		cards.CardOf(cards.Clubs, cards.Three),
+		cards.CardOf(cards.Spades, cards.Four),
+		cards.CardOf(cards.Clubs, cards.Five),
+		cards.CardOf(cards.Hearts, cards.Six),
+		cards.CardOf(cards.Clubs, cards.Seven),
+	)
+	referenceHand := Hand{
+		handType: Straight,
+		comparison: []cards.Rank{
+			cards.Seven,
+		},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+
+}
+
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
-	recognisedHand := hand(testedHand)
+	recognisedHand, _ := hand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {
 		t.Errorf("hand type should be %s (was %s)", referenceHand.handType.String(), recognisedHand.handType.String())
 	}
-	for i, rank := range recognisedHand.comparison {
-		if rank != referenceHand.comparison[i] {
+	for i, rank := range referenceHand.comparison {
+		if rank != recognisedHand.comparison[i] {
 			t.Errorf("hand comparison[%d] should be %s (was %s)", i, rank.String(), referenceHand.comparison[i].String())
 		}
 	}

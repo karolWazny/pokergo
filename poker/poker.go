@@ -1,6 +1,7 @@
 package poker
 
 import (
+	"errors"
 	"online-poker/cards"
 	"sort"
 )
@@ -57,24 +58,40 @@ type rankOccurrences struct {
 	Occurrences int
 }
 
-func hand(deck cards.Deck) Hand {
+func hand(deck cards.Deck) (Hand, error) {
+	if len(deck.Cards) != 5 {
+		return Hand{}, errors.New("invalid poker hand size")
+	}
 	occurrences := buildOrderedOccurrencesSlice(deck)
 	{
 		// three of a kind
+		isStraight := true
+		for i := range len(occurrences) - 1 {
+			if int(occurrences[i].Rank-occurrences[i+1].Rank) != 1 {
+				isStraight = false
+				break
+			}
+		}
+		if isStraight {
+			return Hand{
+				handType:   Straight,
+				comparison: []cards.Rank{occurrences[0].Rank},
+			}, nil
+		}
 		if occurrences[0].Occurrences == 3 {
-			return buildHandWithKickers(1, occurrences, ThreeOfAKind)
+			return buildHandWithKickers(1, occurrences, ThreeOfAKind), nil
 		}
 		// some pairs
 		if occurrences[0].Occurrences == 2 {
 			// two pair
 			if occurrences[1].Occurrences == 2 {
-				return buildHandWithKickers(2, occurrences, TwoPair)
+				return buildHandWithKickers(2, occurrences, TwoPair), nil
 			} else {
 				// one pair
-				return buildHandWithKickers(1, occurrences, OnePair)
+				return buildHandWithKickers(1, occurrences, OnePair), nil
 			}
 		}
-		return buildHandWithKickers(0, occurrences, HighCard)
+		return buildHandWithKickers(0, occurrences, HighCard), nil
 	}
 }
 
