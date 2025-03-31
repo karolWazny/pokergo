@@ -63,7 +63,12 @@ func hand(deck cards.Deck) (Hand, error) {
 		return Hand{}, errors.New("invalid poker hand size")
 	}
 	occurrences := buildOrderedOccurrencesSlice(deck)
+	isFlush := isFlush(deck)
 	{
+		// flush
+		if isFlush {
+			return buildHandWithKickers(0, occurrences, Flush), nil
+		}
 		// straight
 		isStraight, occurrences := isStraight(occurrences)
 		if isStraight {
@@ -88,6 +93,14 @@ func hand(deck cards.Deck) (Hand, error) {
 		}
 		return buildHandWithKickers(0, occurrences, HighCard), nil
 	}
+}
+
+func isFlush(deck cards.Deck) bool {
+	suits := map[cards.Suit]bool{}
+	for _, card := range deck.Cards {
+		suits[card.Suit()] = true
+	}
+	return len(suits) == 1
 }
 
 func isStraight(occurrences []rankOccurrences) (bool, []rankOccurrences) {

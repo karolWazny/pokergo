@@ -130,6 +130,27 @@ func TestStraightWithLowAce(t *testing.T) {
 
 }
 
+func TestFlush(t *testing.T) {
+	testedHand := cards.DeckOf(
+		cards.CardOf(cards.Spades, cards.Jack),
+		cards.CardOf(cards.Spades, cards.Two),
+		cards.CardOf(cards.Spades, cards.Three),
+		cards.CardOf(cards.Spades, cards.Four),
+		cards.CardOf(cards.Spades, cards.Five),
+	)
+	referenceHand := Hand{
+		handType: Flush,
+		comparison: []cards.Rank{
+			cards.Jack,
+			cards.Five,
+			cards.Four,
+			cards.Three,
+			cards.Two,
+		},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+}
+
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
 	recognisedHand, _ := hand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {
