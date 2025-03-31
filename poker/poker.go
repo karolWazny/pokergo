@@ -26,6 +26,33 @@ type Hand struct {
 	comparison []cards.Rank
 }
 
+func (h HandType) String() string {
+	switch h {
+	case HighCard:
+		return "HighCard"
+	case OnePair:
+		return "OnePair"
+	case TwoPair:
+		return "TwoPair"
+	case ThreeOfAKind:
+		return "ThreeOfAKind"
+	case Straight:
+		return "Straight"
+	case Flush:
+		return "Flush"
+	case FullHouse:
+		return "FullHouse"
+	case FourOfAKind:
+		return "FourOfAKind"
+	case StraightFlush:
+		return "StraightFlush"
+	case RoyalFlush:
+		return "RoyalFlush"
+	default:
+		return "HighCard"
+	}
+}
+
 type rankOccurrences struct {
 	Rank        cards.Rank
 	Occurrences int

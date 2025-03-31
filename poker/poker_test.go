@@ -1,7 +1,6 @@
 package poker
 
 import (
-	"fmt"
 	"online-poker/cards"
 	"testing"
 )
@@ -10,63 +9,49 @@ func TestOneCard(t *testing.T) {
 	testedHand := cards.DeckOf(
 		cards.CardOf(cards.Clubs, cards.Ace),
 	)
-	recognisedHand := hand(testedHand)
-	if recognisedHand.handType != HighCard {
-		t.Errorf("hand type should be HighCard")
+	referenceHand := Hand{
+		handType:   HighCard,
+		comparison: []cards.Rank{cards.Ace},
 	}
-	if recognisedHand.comparison[0] != cards.Ace {
-		fmt.Println(recognisedHand.comparison[0])
-		t.Errorf("hand comparison should be Ace")
-	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
 func TestTwoCardsHighCard(t *testing.T) {
 	testedHand := cards.DeckOf(
 		cards.CardOf(cards.Clubs, cards.Two), cards.CardOf(cards.Spades, cards.King),
 	)
-	recognisedHand := hand(testedHand)
-	if recognisedHand.handType != HighCard {
-		t.Errorf("hand type should be HighCard")
+	referenceHand := Hand{
+		handType:   HighCard,
+		comparison: []cards.Rank{cards.King, cards.Two},
 	}
-	if recognisedHand.comparison[0] != cards.King {
-		fmt.Println(recognisedHand.comparison[0])
-		t.Errorf("hand comparison[0] should be King")
-	}
-	if recognisedHand.comparison[1] != cards.Two {
-		t.Errorf("hand comparison[1] should be Two")
-	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
 func TestThreeCardsOnePair(t *testing.T) {
 	testedHand := cards.DeckOf(
-		cards.CardOf(cards.Clubs, cards.Two), cards.CardOf(cards.Spades, cards.Two), cards.CardOf(cards.Clubs, cards.Ace),
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Spades, cards.Two),
+		cards.CardOf(cards.Clubs, cards.Ace),
 	)
-	recognisedHand := hand(testedHand)
-	if recognisedHand.handType != OnePair {
-		t.Errorf("hand type should be OnePair")
+	referenceHand := Hand{
+		handType:   OnePair,
+		comparison: []cards.Rank{cards.Two, cards.Ace},
 	}
-	if recognisedHand.comparison[0] != cards.Two {
-		t.Errorf("hand comparison[0] should be Two")
-	}
-	if recognisedHand.comparison[1] != cards.Ace {
-		t.Errorf("hand comparison[1] should be Ace")
-	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
 func TestThreeCardsOnePairWithLameKicker(t *testing.T) {
 	testedHand := cards.DeckOf(
 		cards.CardOf(cards.Clubs, cards.Two), cards.CardOf(cards.Spades, cards.Ace), cards.CardOf(cards.Clubs, cards.Ace),
 	)
-	recognisedHand := hand(testedHand)
-	if recognisedHand.handType != OnePair {
-		t.Errorf("hand type should be OnePair")
+	referenceHand := Hand{
+		handType: OnePair,
+		comparison: []cards.Rank{
+			cards.Ace,
+			cards.Two,
+		},
 	}
-	if recognisedHand.comparison[0] != cards.Ace {
-		t.Errorf("hand comparison[0] should be Ace")
-	}
-	if recognisedHand.comparison[1] != cards.Two {
-		t.Errorf("hand comparison[1] should be Two")
-	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
 func TestFiveCardsTwoPair(t *testing.T) {
@@ -77,17 +62,25 @@ func TestFiveCardsTwoPair(t *testing.T) {
 		cards.CardOf(cards.Hearts, cards.Ace),
 		cards.CardOf(cards.Clubs, cards.Jack),
 	)
+	referenceHand := Hand{
+		handType: TwoPair,
+		comparison: []cards.Rank{
+			cards.Ace,
+			cards.Two,
+			cards.Jack,
+		},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+}
+
+func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
 	recognisedHand := hand(testedHand)
-	if recognisedHand.handType != TwoPair {
-		t.Errorf("hand type should be TwoPair")
+	if recognisedHand.handType != referenceHand.handType {
+		t.Errorf("hand type should be %s (was %s)", referenceHand.handType.String(), recognisedHand.handType.String())
 	}
-	if recognisedHand.comparison[0] != cards.Ace {
-		t.Errorf("hand comparison[0] should be Ace")
-	}
-	if recognisedHand.comparison[1] != cards.Two {
-		t.Errorf("hand comparison[1] should be Two")
-	}
-	if recognisedHand.comparison[2] != cards.Jack {
-		t.Errorf("hand comparison[2] should be Jack")
+	for i, rank := range recognisedHand.comparison {
+		if rank != referenceHand.comparison[i] {
+			t.Errorf("hand comparison[%d] should be %s (was %s)", i, rank.String(), referenceHand.comparison[i].String())
+		}
 	}
 }
