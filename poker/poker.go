@@ -67,50 +67,41 @@ func hand(deck cards.Deck) (Hand, error) {
 	{
 		isStraight, occurrences := isStraight(occurrences)
 		if isStraight && isFlush && occurrences[0].Rank == cards.Ace {
-			return Hand{
-				handType:   RoyalFlush,
-				comparison: make([]cards.Rank, 0),
-			}, nil
+			return buildStraightHand(RoyalFlush), nil
 		}
 		if isStraight && isFlush {
-			return Hand{
-				handType:   StraightFlush,
-				comparison: []cards.Rank{occurrences[0].Rank},
-			}, nil
+			return buildStraightHand(StraightFlush, occurrences[0].Rank), nil
 		}
 		if occurrences[0].Occurrences == 4 {
 			return buildHandWithKickers(occurrences, FourOfAKind), nil
 		}
-		// full house
 		if occurrences[0].Occurrences == 3 && occurrences[1].Occurrences == 2 {
 			return buildHandWithKickers(occurrences, FullHouse), nil
 		}
-		// flush
 		if isFlush {
 			return buildHandWithKickers(occurrences, Flush), nil
 		}
-		// straight
 		if isStraight {
-			return Hand{
-				handType:   Straight,
-				comparison: []cards.Rank{occurrences[0].Rank},
-			}, nil
+			return buildStraightHand(Straight, occurrences[0].Rank), nil
 		}
-		// three of a kind
 		if occurrences[0].Occurrences == 3 {
 			return buildHandWithKickers(occurrences, ThreeOfAKind), nil
 		}
-		// some pairs
 		if occurrences[0].Occurrences == 2 {
-			// two pair
 			if occurrences[1].Occurrences == 2 {
 				return buildHandWithKickers(occurrences, TwoPair), nil
 			} else {
-				// one pair
 				return buildHandWithKickers(occurrences, OnePair), nil
 			}
 		}
 		return buildHandWithKickers(occurrences, HighCard), nil
+	}
+}
+
+func buildStraightHand(handType HandType, comparisons ...cards.Rank) Hand {
+	return Hand{
+		handType:   handType,
+		comparison: comparisons,
 	}
 }
 
