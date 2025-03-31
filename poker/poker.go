@@ -2,7 +2,6 @@ package poker
 
 import (
 	"online-poker/cards"
-	"slices"
 	"sort"
 )
 
@@ -59,17 +58,38 @@ type rankOccurrences struct {
 }
 
 func hand(deck cards.Deck) Hand {
+	occurrences := buildOrderedOccurrencesSlice(deck)
+	{
+		// three of a kind
+		if occurrences[0].Occurrences == 3 {
+			return buildHandWithKickers(1, occurrences, ThreeOfAKind)
+		}
+		// some pairs
+		if occurrences[0].Occurrences == 2 {
+			// two pair
+			if occurrences[1].Occurrences == 2 {
+				return buildHandWithKickers(2, occurrences, TwoPair)
+			} else {
+				// one pair
+				return buildHandWithKickers(1, occurrences, OnePair)
+			}
+		}
+		return buildHandWithKickers(0, occurrences, HighCard)
+	}
+}
+
+func buildOrderedOccurrencesSlice(deck cards.Deck) []rankOccurrences {
 	unique := map[cards.Rank][]cards.Suit{}
 	for _, card := range deck.Cards {
 		unique[card.Rank()] = append(unique[card.Rank()], card.Suit())
 	}
-	comparison := make([]cards.Rank, len(unique))
 	occurrences := make([]rankOccurrences, len(unique))
-	i := 0
-	for rank, suits := range unique {
-		occurrences[i] = rankOccurrences{rank, len(suits)}
-		comparison[i] = rank
-		i++
+	{
+		i := 0
+		for rank, suits := range unique {
+			occurrences[i] = rankOccurrences{rank, len(suits)}
+			i++
+		}
 	}
 	sort.Slice(occurrences, func(i, j int) bool {
 		return occurrences[i].Rank > occurrences[j].Rank
@@ -77,52 +97,25 @@ func hand(deck cards.Deck) Hand {
 	sort.SliceStable(occurrences, func(i, j int) bool {
 		return occurrences[i].Occurrences > occurrences[j].Occurrences
 	})
-	for i, occurrence := range occurrences {
-		// three of a kind
-		if occurrence.Occurrences == 3 {
-			kickers := occurrences[i+1:]
-			sort.Slice(kickers, func(i, j int) bool {
-				return kickers[i].Rank > kickers[j].Rank
-			})
-			comparison = make([]cards.Rank, 0)
-			comparison = append(comparison, occurrence.Rank)
-			for _, kicker := range kickers {
-				comparison = append(comparison, kicker.Rank)
-			}
-			return Hand{handType: ThreeOfAKind, comparison: comparison}
-		}
-		// some pairs
-		if occurrence.Occurrences == 2 {
-			// two pair
-			if occurrences[i+1].Occurrences == 2 {
-				kickers := occurrences[i+2:]
-				sort.Slice(kickers, func(i, j int) bool {
-					return kickers[i].Rank > kickers[j].Rank
-				})
-				comparison = make([]cards.Rank, 0)
-				comparison = append(comparison, occurrence.Rank)
-				comparison = append(comparison, occurrences[i+1].Rank)
-				for _, kicker := range kickers {
-					comparison = append(comparison, kicker.Rank)
-				}
-				return Hand{handType: TwoPair, comparison: comparison}
-			} else {
-				// one pair
-				kickers := occurrences[i+1:]
-				sort.Slice(kickers, func(i, j int) bool {
-					return kickers[i].Rank > kickers[j].Rank
-				})
-				comparison = make([]cards.Rank, 0)
-				comparison = append(comparison, occurrence.Rank)
-				for _, kicker := range kickers {
-					comparison = append(comparison, kicker.Rank)
-				}
-				return Hand{handType: OnePair, comparison: comparison}
-			}
-		}
-	}
+	return occurrences
+}
 
-	slices.Sort(comparison)
-	slices.Reverse(comparison)
-	return Hand{handType: HighCard, comparison: comparison}
+func buildHandWithKickers(kickerStart int, occurrences []rankOccurrences, handType HandType) Hand {
+	comparison := make([]cards.Rank, 0)
+	for i := 0; i < kickerStart; i++ {
+		comparison = append(comparison, occurrences[i].Rank)
+	}
+	comparison = createAndAppendKickers(occurrences, kickerStart, comparison)
+	return Hand{handType: handType, comparison: comparison}
+}
+
+func createAndAppendKickers(occurrences []rankOccurrences, kickersStart int, comparison []cards.Rank) []cards.Rank {
+	kickers := occurrences[kickersStart:]
+	sort.Slice(kickers, func(i, j int) bool {
+		return kickers[i].Rank > kickers[j].Rank
+	})
+	for _, kicker := range kickers {
+		comparison = append(comparison, kicker.Rank)
+	}
+	return comparison
 }
