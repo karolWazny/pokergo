@@ -65,6 +65,13 @@ func hand(deck cards.Deck) (Hand, error) {
 	occurrences := buildOrderedOccurrencesSlice(deck)
 	isFlush := isFlush(deck)
 	{
+		isStraight, occurrences := isStraight(occurrences)
+		if isStraight && isFlush {
+			return Hand{
+				handType:   StraightFlush,
+				comparison: []cards.Rank{occurrences[0].Rank},
+			}, nil
+		}
 		if occurrences[0].Occurrences == 4 {
 			return buildHandWithKickers(occurrences, FourOfAKind), nil
 		}
@@ -77,7 +84,6 @@ func hand(deck cards.Deck) (Hand, error) {
 			return buildHandWithKickers(occurrences, Flush), nil
 		}
 		// straight
-		isStraight, occurrences := isStraight(occurrences)
 		if isStraight {
 			return Hand{
 				handType:   Straight,
