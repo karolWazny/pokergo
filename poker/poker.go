@@ -64,20 +64,14 @@ func hand(deck cards.Deck) (Hand, error) {
 	}
 	occurrences := buildOrderedOccurrencesSlice(deck)
 	{
-		// three of a kind
-		isStraight := true
-		for i := range len(occurrences) - 1 {
-			if int(occurrences[i].Rank-occurrences[i+1].Rank) != 1 {
-				isStraight = false
-				break
-			}
-		}
-		if isStraight {
+		// straight
+		if isStraight(occurrences) {
 			return Hand{
 				handType:   Straight,
 				comparison: []cards.Rank{occurrences[0].Rank},
 			}, nil
 		}
+		// three of a kind
 		if occurrences[0].Occurrences == 3 {
 			return buildHandWithKickers(1, occurrences, ThreeOfAKind), nil
 		}
@@ -93,6 +87,17 @@ func hand(deck cards.Deck) (Hand, error) {
 		}
 		return buildHandWithKickers(0, occurrences, HighCard), nil
 	}
+}
+
+func isStraight(occurrences []rankOccurrences) bool {
+	isStraight := true
+	for i := range len(occurrences) - 1 {
+		if int(occurrences[i].Rank-occurrences[i+1].Rank) != 1 {
+			isStraight = false
+			break
+		}
+	}
+	return isStraight
 }
 
 func buildOrderedOccurrencesSlice(deck cards.Deck) []rankOccurrences {
