@@ -160,6 +160,24 @@ func (game *Game) CommunityCards() []cards.Card {
 	return game.community
 }
 
+func (game *Game) GetVisibleGameState() VisibleGameState {
+	players := make([]TexasPlayerPublicInfo, len(game.players))
+	for i, player := range game.players {
+		players[i] = player.GetPublicInfo()
+	}
+	activePlayer := game.players[game.activePlayerIndex].GetPublicInfo()
+	round := game.round
+	dealer := game.players[len(game.players)-1].GetPublicInfo()
+	community := game.CommunityCards()
+	return VisibleGameState{
+		Players:      players,
+		Round:        round,
+		Dealer:       dealer,
+		ActivePlayer: activePlayer,
+		Community:    community,
+	}
+}
+
 func (game *Game) playersInGame() int {
 	playersInGame := 0
 	for _, player := range game.players {
@@ -232,24 +250,6 @@ func (game *Game) isCurrentRoundFinished() bool {
 		}
 	}
 	return true
-}
-
-func (game *Game) GetVisibleGameState() VisibleGameState {
-	players := make([]TexasPlayerPublicInfo, len(game.players))
-	for i, player := range game.players {
-		players[i] = player.GetPublicInfo()
-	}
-	activePlayer := game.players[game.activePlayerIndex].GetPublicInfo()
-	round := game.round
-	dealer := game.players[len(game.players)-1].GetPublicInfo()
-	community := game.CommunityCards()
-	return VisibleGameState{
-		Players:      players,
-		Round:        round,
-		Dealer:       dealer,
-		ActivePlayer: activePlayer,
-		Community:    community,
-	}
 }
 
 type VisibleGameState struct {
