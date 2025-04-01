@@ -224,13 +224,13 @@ func TestRoyalFlush(t *testing.T) {
 }
 
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
-	recognisedHand, _ := hand(testedHand)
+	recognisedHand, _ := RecogniseHand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {
-		t.Errorf("hand type should be %s (was %s)", referenceHand.handType.String(), recognisedHand.handType.String())
+		t.Errorf("RecogniseHand type should be %s (was %s)", referenceHand.handType.String(), recognisedHand.handType.String())
 	}
 	for i, rank := range referenceHand.comparison {
 		if rank != recognisedHand.comparison[i] {
-			t.Errorf("hand comparison[%d] should be %s (was %s)", i, rank.String(), recognisedHand.comparison[i].String())
+			t.Errorf("RecogniseHand comparison[%d] should be %s (was %s)", i, rank.String(), recognisedHand.comparison[i].String())
 		}
 	}
 }

@@ -53,14 +53,9 @@ func (h HandType) String() string {
 	}
 }
 
-type rankOccurrences struct {
-	Rank        cards.Rank
-	Occurrences int
-}
-
-func hand(deck cards.Deck) (Hand, error) {
+func RecogniseHand(deck cards.Deck) (Hand, error) {
 	if len(deck.Cards) != 5 {
-		return Hand{}, errors.New("invalid poker hand size")
+		return Hand{}, errors.New("invalid poker RecogniseHand size")
 	}
 	occurrences := buildOrderedOccurrencesSlice(deck)
 	isFlush := isFlush(deck)
@@ -96,6 +91,11 @@ func hand(deck cards.Deck) (Hand, error) {
 		}
 		return buildHandWithKickers(occurrences, HighCard), nil
 	}
+}
+
+type rankOccurrences struct {
+	Rank        cards.Rank
+	Occurrences int
 }
 
 func buildStraightHand(handType HandType, comparisons ...cards.Rank) Hand {
