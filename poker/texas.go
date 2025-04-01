@@ -24,6 +24,7 @@ const (
 	FLOP
 	TURN
 	RIVER
+	FINISHED
 )
 
 func (round TexasHoldEmRound) String() string {
@@ -36,6 +37,8 @@ func (round TexasHoldEmRound) String() string {
 		return "turn"
 	case RIVER:
 		return "river"
+	case FINISHED:
+		return "finished"
 	default:
 		return "unknown"
 	}
