@@ -20,7 +20,7 @@ func TestGameIsFinishedWhenAllButOneFold(t *testing.T) {
 	game.Fold()
 	visibleGameState := game.GetVisibleGameState()
 	if visibleGameState.Round != FINISHED {
-		t.Errorf("When only one player remains, the game is finished (is %s)", visibleGameState.Round)
+		t.Errorf("When only one player remains, the game should be finished (is %s)", visibleGameState.Round)
 	}
 }
 
