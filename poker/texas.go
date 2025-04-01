@@ -90,7 +90,6 @@ func (table *Table) StartGame() Game {
 		activePlayerIndex: 2,
 		community:         make([]cards.Card, 0),
 		round:             PREFLOP,
-		isFinished:        false,
 	}
 }
 
@@ -101,7 +100,6 @@ type Game struct {
 	activePlayerIndex int
 	community         []cards.Card
 	round             TexasHoldEmRound
-	isFinished        bool
 }
 
 func (game *Game) CurrentPlayer() *TexasPlayer {
@@ -109,7 +107,7 @@ func (game *Game) CurrentPlayer() *TexasPlayer {
 }
 
 func (game *Game) AvailableActions() []TexasHoldEmAction {
-	if game.isFinished {
+	if game.round == FINISHED {
 		return []TexasHoldEmAction{}
 	}
 	currentPlayer := game.players[game.activePlayerIndex]
@@ -205,7 +203,7 @@ func (game *Game) nextPlayer() {
 	isRoundFinished := game.isCurrentRoundFinished()
 	isGameFinished := (isRoundFinished && game.round == RIVER) || game.playersInGame() == 1
 	if isGameFinished {
-		game.isFinished = true
+		game.round = FINISHED
 		return
 	} else if isRoundFinished {
 		game.finishRound()
