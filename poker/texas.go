@@ -1,7 +1,9 @@
 package poker
 
 import (
+	"errors"
 	"online-poker/cards"
+	"slices"
 	"strconv"
 )
 
@@ -69,6 +71,7 @@ func (table *Table) StartGame() Game {
 		activePlayerIndex: 2,
 		community:         make([]cards.Card, 0),
 		round:             PREFLOP,
+		isFinished:        false,
 	}
 }
 
@@ -79,9 +82,17 @@ type Game struct {
 	activePlayerIndex int
 	community         []cards.Card
 	round             TexasHoldEmRound
+	isFinished        bool
 }
 
-func (game *Game) CurrentPlayer() (*TexasPlayer, []TexasHoldEmAction) {
+func (game *Game) CurrentPlayer() *TexasPlayer {
+	return game.players[game.activePlayerIndex]
+}
+
+func (game *Game) AvailableActions() []TexasHoldEmAction {
+	if game.isFinished {
+		return []TexasHoldEmAction{}
+	}
 	currentPlayer := game.players[game.activePlayerIndex]
 	previousPlayerPot := game.getPreviousPlayerPot()
 	availableActions := []TexasHoldEmAction{fold, raise}
@@ -90,20 +101,54 @@ func (game *Game) CurrentPlayer() (*TexasPlayer, []TexasHoldEmAction) {
 	} else {
 		availableActions = append(availableActions, call)
 	}
-	return game.players[game.activePlayerIndex], availableActions
+	return availableActions
 }
 
-func (game *Game) Call() {
+func (game *Game) Call() error {
+	availableActions := game.AvailableActions()
+	if !slices.Contains(availableActions, call) {
+		return errors.New("call action not available")
+	}
 	currentPlayer := game.players[game.activePlayerIndex]
 	pot := game.getPreviousPlayerPot()
 	difference := pot - currentPlayer.currentPot
 	currentPlayer.currentPot = pot
 	currentPlayer.player.money -= difference
 	game.nextPlayer()
+	return nil
+}
+
+func (game *Game) Fold() error {
+	availableActions := game.AvailableActions()
+	if !slices.Contains(availableActions, fold) {
+		return errors.New("fold action not available")
+	}
+	game.players[game.activePlayerIndex].hasFolded = true
+	game.nextPlayer()
+	return nil
+}
+
+func (game *Game) Check() error {
+	availableActions := game.AvailableActions()
+	if !slices.Contains(availableActions, check) {
+		return errors.New("check action not available")
+	}
+	game.nextPlayer()
+	return nil
 }
 
 func (game *Game) CommunityCards() []cards.Card {
 	return game.community
+}
+
+func (game *Game) playersInGame() int {
+	playersInGame := 0
+	for _, player := range game.players {
+		if !player.hasFolded {
+			playersInGame++
+		}
+	}
+	return playersInGame
 }
 
 func (game *Game) getPreviousPlayerPot() int64 {
@@ -119,11 +164,15 @@ func (game *Game) getPreviousPlayerPot() int64 {
 func (game *Game) nextPlayer() {
 	game.players[game.activePlayerIndex].hasPlayed = true
 	game.activePlayerIndex = (game.activePlayerIndex + 1) % len(game.players)
-	for ; game.players[game.activePlayerIndex].hasFolded; game.activePlayerIndex++ {
+	for game.players[game.activePlayerIndex].hasFolded {
 		game.activePlayerIndex = (game.activePlayerIndex + 1) % len(game.players)
 	}
 	isRoundFinished := game.isCurrentRoundFinished()
-	if isRoundFinished {
+	isGameFinished := (isRoundFinished && game.round == RIVER) || game.playersInGame() == 1
+	if isGameFinished {
+		game.isFinished = true
+		return
+	} else if isRoundFinished {
 		game.finishRound()
 	}
 }
