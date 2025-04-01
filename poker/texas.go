@@ -2,6 +2,7 @@ package poker
 
 import (
 	"errors"
+	"fmt"
 	"online-poker/cards"
 	"slices"
 	"strconv"
@@ -24,6 +25,21 @@ const (
 	TURN
 	RIVER
 )
+
+func (round TexasHoldEmRound) String() string {
+	switch round {
+	case PREFLOP:
+		return "preflop"
+	case FLOP:
+		return "flop"
+	case TURN:
+		return "turn"
+	case RIVER:
+		return "river"
+	default:
+		return "unknown"
+	}
+}
 
 type Table struct {
 	players     []*Player
@@ -163,10 +179,8 @@ func (game *Game) getPreviousPlayerPot() int64 {
 
 func (game *Game) nextPlayer() {
 	game.players[game.activePlayerIndex].hasPlayed = true
-	game.activePlayerIndex = (game.activePlayerIndex + 1) % len(game.players)
-	for game.players[game.activePlayerIndex].hasFolded {
-		game.activePlayerIndex = (game.activePlayerIndex + 1) % len(game.players)
-	}
+	game.incrementActivePlayerIndex()
+	game.changeActivePlayerToFirstNonFolded()
 	isRoundFinished := game.isCurrentRoundFinished()
 	isGameFinished := (isRoundFinished && game.round == RIVER) || game.playersInGame() == 1
 	if isGameFinished {
@@ -182,6 +196,7 @@ func (game *Game) finishRound() {
 		// trigger showdown
 	}
 	game.activePlayerIndex = 0
+	game.changeActivePlayerToFirstNonFolded()
 	for _, player := range game.players {
 		player.hasPlayed = false
 	}
@@ -197,6 +212,16 @@ func (game *Game) finishRound() {
 	game.round++
 }
 
+func (game *Game) changeActivePlayerToFirstNonFolded() {
+	for game.players[game.activePlayerIndex].hasFolded {
+		game.incrementActivePlayerIndex()
+	}
+}
+
+func (game *Game) incrementActivePlayerIndex() {
+	game.activePlayerIndex = (game.activePlayerIndex + 1) % len(game.players)
+}
+
 func (game *Game) isCurrentRoundFinished() bool {
 	for _, player := range game.players {
 		if !player.hasFolded && !player.hasPlayed {
@@ -206,12 +231,83 @@ func (game *Game) isCurrentRoundFinished() bool {
 	return true
 }
 
+func (game *Game) GetVisibleGameState() VisibleGameState {
+	players := make([]TexasPlayerPublicInfo, len(game.players))
+	for i, player := range game.players {
+		players[i] = player.GetPublicInfo()
+	}
+	activePlayer := game.players[game.activePlayerIndex].GetPublicInfo()
+	round := game.round
+	dealer := game.players[len(game.players)-1].GetPublicInfo()
+	community := game.CommunityCards()
+	return VisibleGameState{
+		Players:      players,
+		Round:        round,
+		Dealer:       dealer,
+		ActivePlayer: activePlayer,
+		Community:    community,
+	}
+}
+
+type VisibleGameState struct {
+	Players      []TexasPlayerPublicInfo
+	Round        TexasHoldEmRound
+	ActivePlayer TexasPlayerPublicInfo
+	Dealer       TexasPlayerPublicInfo
+	Community    []cards.Card
+}
+
+func (gameState VisibleGameState) Print() {
+	fmt.Printf("Little Friendly Game of Poker, stage: %s\n", gameState.Round)
+	fmt.Printf("Dealer: %s\n", gameState.Dealer.Name)
+	fmt.Printf("Community Cards:\n")
+	for _, card := range gameState.Community {
+		fmt.Printf("- %s\n", card)
+	}
+	fmt.Printf("Players:\n")
+	for _, player := range gameState.Players {
+		fmt.Printf("- %s", player)
+	}
+	fmt.Printf("Now playing: %s\n", gameState.ActivePlayer.Name)
+}
+
+type TexasPlayerPublicInfo struct {
+	Name       string
+	Money      int64
+	HasFolded  bool
+	CurrentPot int64
+	Cards      []cards.Card
+}
+
+func (playerPublicInfo TexasPlayerPublicInfo) String() string {
+	foldedString := "in game"
+	if playerPublicInfo.HasFolded {
+		foldedString = "has folded"
+	}
+	return fmt.Sprintf("%s, pot: %d$, %s, total: %d$, Cards: %s\n",
+		playerPublicInfo.Name,
+		playerPublicInfo.CurrentPot,
+		foldedString,
+		playerPublicInfo.Money,
+		playerPublicInfo.Cards)
+}
+
 type TexasPlayer struct {
 	player     *Player
 	hand       cards.Deck
 	hasFolded  bool
 	hasPlayed  bool
 	currentPot int64
+}
+
+func (texasPlayer TexasPlayer) GetPublicInfo() TexasPlayerPublicInfo {
+	return TexasPlayerPublicInfo{
+		Name:       texasPlayer.player.name,
+		Money:      texasPlayer.player.money,
+		HasFolded:  texasPlayer.hasFolded,
+		CurrentPot: texasPlayer.currentPot,
+		Cards:      []cards.Card{},
+	}
 }
 
 func (texasPlayer TexasPlayer) String() string {
