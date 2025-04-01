@@ -33,4 +33,21 @@ func main() {
 	fmt.Println(player)
 	// here it should already be flop
 	fmt.Println(game.CommunityCards())
+	game.Call()
+	player, _ = game.CurrentPlayer()
+	fmt.Println(player)
+	fmt.Println(game.CommunityCards())
+	game.Call()
+	player, _ = game.CurrentPlayer()
+	fmt.Println(player)
+	fmt.Println(game.CommunityCards())
+	game.Call()
+	player, _ = game.CurrentPlayer()
+	fmt.Println(player)
+	fmt.Println(game.CommunityCards())
+	game.Call()
+	player, _ = game.CurrentPlayer()
+	fmt.Println(player)
+	// here it should already be flop
+	fmt.Println(game.CommunityCards())
 }
