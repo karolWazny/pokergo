@@ -154,6 +154,14 @@ func (game *Game) Check() error {
 	return nil
 }
 
+func (game *Game) Raise(amount int64) error {
+	realAmount := game.getPreviousPlayerPot() - game.getCurrentPlayerPot() + amount
+	game.CurrentPlayer().currentPot += realAmount
+	game.CurrentPlayer().player.money -= realAmount
+	game.nextPlayer()
+	return nil
+}
+
 func (game *Game) CommunityCards() []cards.Card {
 	return game.community
 }
@@ -194,6 +202,10 @@ func (game *Game) getPreviousPlayerPot() int64 {
 		}
 	}
 	panic("There should be at least two active players!")
+}
+
+func (game *Game) getCurrentPlayerPot() int64 {
+	return game.CurrentPlayer().currentPot
 }
 
 func (game *Game) nextPlayer() {
@@ -242,12 +254,16 @@ func (game *Game) incrementActivePlayerIndex() {
 }
 
 func (game *Game) isCurrentRoundFinished() bool {
+	uniquePots := make(map[int64]bool)
 	for _, player := range game.players {
-		if !player.hasFolded && !player.hasPlayed {
-			return false
+		if !player.hasFolded {
+			if !player.hasPlayed {
+				return false
+			}
+			uniquePots[player.currentPot] = true
 		}
 	}
-	return true
+	return len(uniquePots) == 1
 }
 
 type VisibleGameState struct {
