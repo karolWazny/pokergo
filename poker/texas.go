@@ -155,6 +155,10 @@ func (game *Game) Check() error {
 }
 
 func (game *Game) Raise(amount int64) error {
+	if amount < game.lastBet {
+		return errors.New("amount must be greater than last bet")
+	}
+	game.lastBet = amount
 	realAmount := game.getPreviousPlayerPot() - game.getCurrentPlayerPot() + amount
 	game.CurrentPlayer().currentPot += realAmount
 	game.CurrentPlayer().player.money -= realAmount

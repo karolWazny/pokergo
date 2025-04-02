@@ -79,6 +79,31 @@ func TestSecondRaiseCausesAReRaise(t *testing.T) {
 	}
 }
 
+func TestCannotRaiseLessThanBigBlind(t *testing.T) {
+	table := prepareThreePlayerTable()
+	game := table.StartGame()
+	game.Call()
+	game.Call()
+	game.Check()
+	e := game.Raise(25)
+	if e == nil {
+		t.Errorf("Raising 25 with big blind of 50 should cause an error")
+	}
+}
+
+func TestCannotRaiseLessThanLastRaise(t *testing.T) {
+	table := prepareThreePlayerTable()
+	game := table.StartGame()
+	game.Call()
+	game.Call()
+	game.Check()
+	game.Raise(100)
+	e := game.Raise(50)
+	if e == nil {
+		t.Errorf("Raising 50 after a raise of 100 should cause an error")
+	}
+}
+
 func prepareThreePlayerTable() Table {
 	table := NewTable(20, 50)
 	master := NewPlayer("MasterOfDisaster", 1500)
