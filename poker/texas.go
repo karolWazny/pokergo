@@ -95,6 +95,7 @@ func (table *Table) StartGame() Game {
 
 type Game struct {
 	players           []*TexasPlayer
+	winner            *TexasPlayer
 	lastBet           int64
 	deck              cards.Deck
 	activePlayerIndex int
@@ -102,15 +103,25 @@ type Game struct {
 	round             TexasHoldEmRound
 }
 
-func (game *Game) CurrentPlayer() *TexasPlayer {
-	return game.players[game.activePlayerIndex]
+func (game *Game) Winner() (*TexasPlayer, error) {
+	if game.round != FINISHED {
+		return nil, errors.New("there is no winner before game end")
+	}
+	return game.winner, nil
+}
+
+func (game *Game) CurrentPlayer() (*TexasPlayer, error) {
+	if game.round != FINISHED {
+		return game.unsafeGetCurrentPlayer(), nil
+	}
+	return nil, errors.New("in finished game there is no current player")
 }
 
 func (game *Game) AvailableActions() []TexasHoldEmAction {
 	if game.round == FINISHED {
 		return []TexasHoldEmAction{}
 	}
-	currentPlayer := game.players[game.activePlayerIndex]
+	currentPlayer := game.unsafeGetCurrentPlayer()
 	previousPlayerPot := game.getPreviousPlayerPot()
 	availableActions := []TexasHoldEmAction{fold, raise}
 	if previousPlayerPot == currentPlayer.currentPot {
@@ -126,7 +137,7 @@ func (game *Game) Call() error {
 	if !slices.Contains(availableActions, call) {
 		return errors.New("call action not available")
 	}
-	currentPlayer := game.players[game.activePlayerIndex]
+	currentPlayer := game.unsafeGetCurrentPlayer()
 	pot := game.getPreviousPlayerPot()
 	difference := pot - currentPlayer.currentPot
 	currentPlayer.currentPot = pot
@@ -140,8 +151,19 @@ func (game *Game) Fold() error {
 	if !slices.Contains(availableActions, fold) {
 		return errors.New("fold action not available")
 	}
-	game.players[game.activePlayerIndex].hasFolded = true
-	game.nextPlayer()
+	game.unsafeGetCurrentPlayer().hasFolded = true
+	if game.playersInGame() == 1 {
+		// finish game
+		lastActivePlayerIndex := slices.IndexFunc(game.players, func(player *TexasPlayer) bool {
+			return !player.hasFolded
+		})
+		game.winner = game.players[lastActivePlayerIndex]
+		game.activePlayerIndex = -1
+		game.round = FINISHED
+		game.transferPotToWinner()
+	} else {
+		game.nextPlayer()
+	}
 	return nil
 }
 
@@ -160,8 +182,11 @@ func (game *Game) Raise(amount int64) error {
 	}
 	game.lastBet = amount
 	realAmount := game.getPreviousPlayerPot() - game.getCurrentPlayerPot() + amount
-	game.CurrentPlayer().currentPot += realAmount
-	game.CurrentPlayer().player.money -= realAmount
+	currentPlayer, e := game.CurrentPlayer()
+	if e == nil {
+		currentPlayer.currentPot += realAmount
+		currentPlayer.player.money -= realAmount
+	}
 	game.nextPlayer()
 	return nil
 }
@@ -171,21 +196,31 @@ func (game *Game) CommunityCards() []cards.Card {
 }
 
 func (game *Game) GetVisibleGameState() VisibleGameState {
+	visibleGameState := VisibleGameState{}
 	players := make([]TexasPlayerPublicInfo, len(game.players))
 	for i, player := range game.players {
 		players[i] = player.GetPublicInfo()
 	}
-	activePlayer := game.players[game.activePlayerIndex].GetPublicInfo()
-	round := game.round
-	dealer := game.players[len(game.players)-1].GetPublicInfo()
-	community := game.CommunityCards()
-	return VisibleGameState{
-		Players:      players,
-		Round:        round,
-		Dealer:       dealer,
-		ActivePlayer: activePlayer,
-		Community:    community,
+	visibleGameState.Players = players
+	activePlayer, e := game.CurrentPlayer()
+	if e == nil {
+		activePlayerInfo := activePlayer.GetPublicInfo()
+		visibleGameState.ActivePlayer = &activePlayerInfo
 	}
+	visibleGameState.Round = game.round
+	visibleGameState.Dealer = game.players[len(game.players)-1].GetPublicInfo()
+	visibleGameState.Community = game.CommunityCards()
+	return visibleGameState
+}
+
+func (game *Game) transferPotToWinner() {
+	for _, player := range game.players {
+		game.winner.player.money += player.currentPot
+	}
+}
+
+func (game *Game) unsafeGetCurrentPlayer() *TexasPlayer {
+	return game.players[game.activePlayerIndex]
 }
 
 func (game *Game) playersInGame() int {
@@ -209,12 +244,11 @@ func (game *Game) getPreviousPlayerPot() int64 {
 }
 
 func (game *Game) getCurrentPlayerPot() int64 {
-	return game.CurrentPlayer().currentPot
+	return game.unsafeGetCurrentPlayer().currentPot
 }
 
 func (game *Game) nextPlayer() {
-	game.players[game.activePlayerIndex].hasPlayed = true
-	game.incrementActivePlayerIndex()
+	game.unsafeGetCurrentPlayer().hasPlayed = true
 	game.changeActivePlayerToFirstNonFolded()
 	isRoundFinished := game.isCurrentRoundFinished()
 	isGameFinished := (isRoundFinished && game.round == RIVER) || game.playersInGame() == 1
@@ -230,7 +264,7 @@ func (game *Game) finishRound() {
 	if game.round == RIVER {
 		// trigger showdown
 	}
-	game.activePlayerIndex = 0
+	game.activePlayerIndex = len(game.players) - 1
 	game.changeActivePlayerToFirstNonFolded()
 	for _, player := range game.players {
 		player.hasPlayed = false
@@ -248,7 +282,8 @@ func (game *Game) finishRound() {
 }
 
 func (game *Game) changeActivePlayerToFirstNonFolded() {
-	for game.players[game.activePlayerIndex].hasFolded {
+	game.incrementActivePlayerIndex()
+	for game.unsafeGetCurrentPlayer().hasFolded {
 		game.incrementActivePlayerIndex()
 	}
 }
@@ -273,7 +308,7 @@ func (game *Game) isCurrentRoundFinished() bool {
 type VisibleGameState struct {
 	Players      []TexasPlayerPublicInfo
 	Round        TexasHoldEmRound
-	ActivePlayer TexasPlayerPublicInfo
+	ActivePlayer *TexasPlayerPublicInfo
 	Dealer       TexasPlayerPublicInfo
 	Community    []cards.Card
 }

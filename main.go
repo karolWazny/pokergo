@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"online-poker/poker"
 )
 
@@ -17,20 +16,20 @@ func main() {
 	hanku := poker.NewPlayer("hank.prostokat", 1500)
 	table.AddPlayer(&hanku)
 	game := table.StartGame()
+	// preflop
+	game.Fold()
 	game.Call()
+	game.Check()
+	// flop
+	game.Check()
+	game.Check()
+	// turn
+	game.Raise(100)
+	game.Raise(100)
 	game.Call()
-	game.Check()
-	fmt.Println(game.CommunityCards())
-	game.Check()
-	game.Check()
-	game.Check()
-	fmt.Println(game.CommunityCards())
-	game.Check()
-	game.Check()
-	game.Check()
-	fmt.Println(game.CommunityCards())
-	game.Check()
-	game.Check()
-	game.Check()
-	fmt.Println(game.CommunityCards())
+	// river
+	game.Raise(150)
+	game.Call()
+	// showdown
+	game.GetVisibleGameState().Print()
 }
