@@ -14,17 +14,6 @@ func TestThreePlayersCanStartAGame(t *testing.T) {
 	}
 }
 
-func TestGameIsFinishedWhenAllButOneFold(t *testing.T) {
-	table := prepareThreePlayerTable()
-	game := table.StartGame()
-	game.Fold()
-	game.Fold()
-	visibleGameState := game.GetVisibleGameState()
-	if visibleGameState.Round != FINISHED {
-		t.Errorf("When only one player remains, the game should be finished (is %s)", visibleGameState.Round)
-	}
-}
-
 func TestPlayerCannotCallIfThereWasNoRaise(t *testing.T) {
 	table := prepareThreePlayerTable()
 	game := table.StartGame()
@@ -114,6 +103,10 @@ func TestWhenEverybodyFoldsRemainingPlayerWins(t *testing.T) {
 	// hanku folds
 	game.Fold()
 	// master is the last player standing
+	visibleGameState := game.GetVisibleGameState()
+	if visibleGameState.Round != FINISHED {
+		t.Errorf("When only one player remains, the game should be finished (is %s)", visibleGameState.Round)
+	}
 	winner, e := game.Winner()
 	if e != nil {
 		t.Errorf("There should be no error fetching winner after game is finished (was %v)", e)
