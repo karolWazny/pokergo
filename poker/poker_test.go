@@ -223,6 +223,75 @@ func TestRoyalFlush(t *testing.T) {
 	testPokerHandRecognition(t, testedHand, referenceHand)
 }
 
+func TestPairTrumpsHighCard(t *testing.T) {
+	highCardHand := cards.DeckOf(
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Spades, cards.King),
+		cards.CardOf(cards.Spades, cards.Five),
+		cards.CardOf(cards.Spades, cards.Seven),
+		cards.CardOf(cards.Diamonds, cards.Jack),
+	)
+	pairOfTwosHand := cards.DeckOf(
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Spades, cards.Two),
+		cards.CardOf(cards.Spades, cards.Five),
+		cards.CardOf(cards.Spades, cards.Seven),
+		cards.CardOf(cards.Diamonds, cards.Jack),
+	)
+	highCard, _ := RecogniseHand(highCardHand)
+	pairOfTwos, _ := RecogniseHand(pairOfTwosHand)
+	result := CompareHands(highCard, pairOfTwos)
+	if result != SECOND_WINS {
+		t.Errorf("pair of twos should trump high card")
+	}
+}
+
+func TestPairOfKingsTrumpsPairOfTwos(t *testing.T) {
+	pairOfKingsHand := cards.DeckOf(
+		cards.CardOf(cards.Clubs, cards.King),
+		cards.CardOf(cards.Spades, cards.King),
+		cards.CardOf(cards.Spades, cards.Five),
+		cards.CardOf(cards.Spades, cards.Seven),
+		cards.CardOf(cards.Diamonds, cards.Jack),
+	)
+	pairOfTwosHand := cards.DeckOf(
+		cards.CardOf(cards.Clubs, cards.Two),
+		cards.CardOf(cards.Spades, cards.Two),
+		cards.CardOf(cards.Spades, cards.Five),
+		cards.CardOf(cards.Spades, cards.Seven),
+		cards.CardOf(cards.Diamonds, cards.Jack),
+	)
+	pairOfKings, _ := RecogniseHand(pairOfKingsHand)
+	pairOfTwos, _ := RecogniseHand(pairOfTwosHand)
+	result := CompareHands(pairOfKings, pairOfTwos)
+	if result != FIRST_WINS {
+		t.Errorf("pair of kings should trump pair of twos")
+	}
+}
+
+func TestTie(t *testing.T) {
+	firstHand := cards.DeckOf(
+		cards.CardOf(cards.Clubs, cards.King),
+		cards.CardOf(cards.Spades, cards.King),
+		cards.CardOf(cards.Spades, cards.Five),
+		cards.CardOf(cards.Spades, cards.Seven),
+		cards.CardOf(cards.Diamonds, cards.Jack),
+	)
+	secondHand := cards.DeckOf(
+		cards.CardOf(cards.Hearts, cards.King),
+		cards.CardOf(cards.Diamonds, cards.King),
+		cards.CardOf(cards.Spades, cards.Five),
+		cards.CardOf(cards.Spades, cards.Seven),
+		cards.CardOf(cards.Diamonds, cards.Jack),
+	)
+	firstHandRecognised, _ := RecogniseHand(firstHand)
+	secondHandRecognised, _ := RecogniseHand(secondHand)
+	result := CompareHands(firstHandRecognised, secondHandRecognised)
+	if result != TIE {
+		t.Errorf("pair of kings is equal to pair of kings with the same kickers")
+	}
+}
+
 func testPokerHandRecognition(t *testing.T, testedHand cards.Deck, referenceHand Hand) {
 	recognisedHand, _ := RecogniseHand(testedHand)
 	if recognisedHand.handType != referenceHand.handType {
