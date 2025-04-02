@@ -69,7 +69,7 @@ func TestSecondRaiseCausesAReRaise(t *testing.T) {
 	game.Call()
 	game.Check()
 	game.Raise(50)
-	player := game.CurrentPlayer()
+	player, _ := game.CurrentPlayer()
 	currentMoney := player.player.money
 	game.Raise(50)
 	moneyAfterRaise := player.player.money
@@ -101,6 +101,28 @@ func TestCannotRaiseLessThanLastRaise(t *testing.T) {
 	e := game.Raise(50)
 	if e == nil {
 		t.Errorf("Raising 50 after a raise of 100 should cause an error")
+	}
+}
+
+func TestWhenEverybodyFoldsRemainingPlayerWins(t *testing.T) {
+	table := prepareThreePlayerTable()
+	game := table.StartGame()
+	// master calls
+	game.Call()
+	// badmann folds
+	game.Fold()
+	// hanku folds
+	game.Fold()
+	// master is the last player standing
+	winner, e := game.Winner()
+	if e != nil {
+		t.Errorf("There should be no error fetching winner after game is finished (was %v)", e)
+	}
+	if winner.player.name != "MasterOfDisaster" {
+		t.Errorf("Winner should be MasterOfDisaster (was %s)", winner.player.name)
+	}
+	if winner.player.money != 1570 {
+		t.Errorf("Winner money should be 1570 (initial money + blinds) (was %d)", winner.player.money)
 	}
 }
 
