@@ -241,7 +241,7 @@ func TestPairTrumpsHighCard(t *testing.T) {
 	highCard, _ := RecogniseHand(highCardHand)
 	pairOfTwos, _ := RecogniseHand(pairOfTwosHand)
 	result := CompareHands(highCard, pairOfTwos)
-	if result != SECOND_WINS {
+	if result != SecondWins {
 		t.Errorf("pair of twos should trump high card")
 	}
 }
@@ -264,7 +264,7 @@ func TestPairOfKingsTrumpsPairOfTwos(t *testing.T) {
 	pairOfKings, _ := RecogniseHand(pairOfKingsHand)
 	pairOfTwos, _ := RecogniseHand(pairOfTwosHand)
 	result := CompareHands(pairOfKings, pairOfTwos)
-	if result != FIRST_WINS {
+	if result != FirstWins {
 		t.Errorf("pair of kings should trump pair of twos")
 	}
 }
@@ -287,7 +287,7 @@ func TestTie(t *testing.T) {
 	firstHandRecognised, _ := RecogniseHand(firstHand)
 	secondHandRecognised, _ := RecogniseHand(secondHand)
 	result := CompareHands(firstHandRecognised, secondHandRecognised)
-	if result != TIE {
+	if result != Tie {
 		t.Errorf("pair of kings is equal to pair of kings with the same kickers")
 	}
 }

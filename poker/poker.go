@@ -24,9 +24,9 @@ const (
 type ComparisonResult int
 
 const (
-	FIRST_WINS  ComparisonResult = -1
-	TIE                          = 0
-	SECOND_WINS                  = 1
+	FirstWins  ComparisonResult = -1
+	Tie                         = 0
+	SecondWins                  = 1
 )
 
 type Hand struct {
@@ -63,20 +63,20 @@ func (h HandType) String() string {
 
 func CompareHands(first Hand, second Hand) ComparisonResult {
 	if first.handType > second.handType {
-		return FIRST_WINS
+		return FirstWins
 	} else if first.handType < second.handType {
-		return SECOND_WINS
+		return SecondWins
 	}
 	for i, card := range first.comparison {
 		if card > second.comparison[i] {
-			return FIRST_WINS
+			return FirstWins
 		} else if card < second.comparison[i] {
-			return SECOND_WINS
+			return SecondWins
 		} else {
 			continue
 		}
 	}
-	return TIE
+	return Tie
 }
 
 func RecogniseHand(deck cards.Deck) (Hand, error) {
