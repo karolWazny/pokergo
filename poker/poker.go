@@ -2,6 +2,7 @@ package poker
 
 import (
 	"errors"
+	"fmt"
 	"online-poker/cards"
 	"sort"
 )
@@ -9,7 +10,8 @@ import (
 type HandType int
 
 const (
-	HighCard HandType = iota
+	LowestHandGuardian HandType = -1
+	HighCard           HandType = iota
 	OnePair
 	TwoPair
 	ThreeOfAKind
@@ -32,6 +34,10 @@ const (
 type Hand struct {
 	handType   HandType
 	comparison []cards.Rank
+}
+
+func (h Hand) String() string {
+	return h.handType.String() + " " + fmt.Sprintf("%v", h.comparison)
 }
 
 func (h HandType) String() string {
@@ -116,6 +122,13 @@ func RecogniseHand(deck cards.Deck) (Hand, error) {
 			}
 		}
 		return buildHandWithKickers(occurrences, HighCard), nil
+	}
+}
+
+func CreateLowGuardian() Hand {
+	return Hand{
+		handType:   LowestHandGuardian,
+		comparison: []cards.Rank{},
 	}
 }
 

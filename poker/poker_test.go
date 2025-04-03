@@ -94,6 +94,26 @@ func TestFiveCardsThreeOfAKind(t *testing.T) {
 
 }
 
+func TestFiveCardsThreeOfAKind2(t *testing.T) {
+	testedHand := cards.DeckOf(
+		cards.CardOf(cards.Spades, cards.Six),
+		cards.CardOf(cards.Diamonds, cards.Six),
+		cards.CardOf(cards.Clubs, cards.Six),
+		cards.CardOf(cards.Clubs, cards.King),
+		cards.CardOf(cards.Diamonds, cards.Ten),
+	)
+	referenceHand := Hand{
+		handType: ThreeOfAKind,
+		comparison: []cards.Rank{
+			cards.Six,
+			cards.King,
+			cards.Ten,
+		},
+	}
+	testPokerHandRecognition(t, testedHand, referenceHand)
+
+}
+
 func TestFiveCardsStraightWithoutAce(t *testing.T) {
 	testedHand := cards.DeckOf(
 		cards.CardOf(cards.Clubs, cards.Three),

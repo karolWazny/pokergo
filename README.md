@@ -6,7 +6,7 @@ Quite a few reasons:
 - to have a free and safe online place to play poker with my boys, since we don't necessarily live in the same town anymore
 ## TODOS
 #### short term
--[ ] handle showdown
+-[ ] handle ties
 -[ ] handle all ins
 #### long term
 -[ ] make it interactive (CLI)

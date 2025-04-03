@@ -3,6 +3,7 @@ package poker
 import (
 	"errors"
 	"fmt"
+	"gonum.org/v1/gonum/stat/combin"
 	"online-poker/cards"
 	"slices"
 	"strconv"
@@ -103,35 +104,6 @@ type Game struct {
 	round             TexasHoldEmRound
 }
 
-func (game *Game) Winner() (*TexasPlayer, error) {
-	if game.round != FINISHED {
-		return nil, errors.New("there is no winner before game end")
-	}
-	return game.winner, nil
-}
-
-func (game *Game) CurrentPlayer() (*TexasPlayer, error) {
-	if game.round != FINISHED {
-		return game.unsafeGetCurrentPlayer(), nil
-	}
-	return nil, errors.New("in finished game there is no current player")
-}
-
-func (game *Game) AvailableActions() []TexasHoldEmAction {
-	if game.round == FINISHED {
-		return []TexasHoldEmAction{}
-	}
-	currentPlayer := game.unsafeGetCurrentPlayer()
-	previousPlayerPot := game.getPreviousPlayerPot()
-	availableActions := []TexasHoldEmAction{fold, raise}
-	if previousPlayerPot == currentPlayer.currentPot {
-		availableActions = append(availableActions, check)
-	} else {
-		availableActions = append(availableActions, call)
-	}
-	return availableActions
-}
-
 func (game *Game) Call() error {
 	availableActions := game.AvailableActions()
 	if !slices.Contains(availableActions, call) {
@@ -152,6 +124,7 @@ func (game *Game) Fold() error {
 		return errors.New("fold action not available")
 	}
 	game.unsafeGetCurrentPlayer().hasFolded = true
+	game.unsafeGetCurrentPlayer().hand = cards.DeckOf()
 	if game.playersInGame() == 1 {
 		// finish game
 		lastActivePlayerIndex := slices.IndexFunc(game.players, func(player *TexasPlayer) bool {
@@ -189,6 +162,35 @@ func (game *Game) Raise(amount int64) error {
 	}
 	game.nextPlayer()
 	return nil
+}
+
+func (game *Game) Winner() (*TexasPlayer, error) {
+	if game.round != FINISHED {
+		return nil, errors.New("there is no winner before game end")
+	}
+	return game.winner, nil
+}
+
+func (game *Game) CurrentPlayer() (*TexasPlayer, error) {
+	if game.round != FINISHED {
+		return game.unsafeGetCurrentPlayer(), nil
+	}
+	return nil, errors.New("in finished game there is no current player")
+}
+
+func (game *Game) AvailableActions() []TexasHoldEmAction {
+	if game.round == FINISHED {
+		return []TexasHoldEmAction{}
+	}
+	currentPlayer := game.unsafeGetCurrentPlayer()
+	previousPlayerPot := game.getPreviousPlayerPot()
+	availableActions := []TexasHoldEmAction{fold, raise}
+	if previousPlayerPot == currentPlayer.currentPot {
+		availableActions = append(availableActions, check)
+	} else {
+		availableActions = append(availableActions, call)
+	}
+	return availableActions
 }
 
 func (game *Game) CommunityCards() []cards.Card {
@@ -251,11 +253,7 @@ func (game *Game) nextPlayer() {
 	game.unsafeGetCurrentPlayer().hasPlayed = true
 	game.changeActivePlayerToFirstNonFolded()
 	isRoundFinished := game.isCurrentRoundFinished()
-	isGameFinished := (isRoundFinished && game.round == RIVER) || game.playersInGame() == 1
-	if isGameFinished {
-		game.round = FINISHED
-		return
-	} else if isRoundFinished {
+	if isRoundFinished {
 		game.finishRound()
 	}
 }
@@ -263,6 +261,29 @@ func (game *Game) nextPlayer() {
 func (game *Game) finishRound() {
 	if game.round == RIVER {
 		// trigger showdown
+		for _, player := range game.players {
+			if !player.hasFolded {
+				allCards := append(game.community, player.hand.Cards...)
+				bestHand, bestCombination := game.findBestHand(allCards)
+				player.bestHand = &bestHand
+				player.bestCombination = bestCombination
+			}
+		}
+		bestPlayer := &TexasPlayer{}
+		bestHand := CreateLowGuardian()
+		for _, player := range game.players {
+			if !player.hasFolded {
+				comparisonResult := CompareHands(bestHand, *player.bestHand)
+				if comparisonResult != FirstWins {
+					bestPlayer = player
+					bestHand = *player.bestHand
+				}
+			}
+		}
+		game.winner = bestPlayer
+		game.round = FINISHED
+		game.transferPotToWinner()
+		return
 	}
 	game.activePlayerIndex = len(game.players) - 1
 	game.changeActivePlayerToFirstNonFolded()
@@ -279,6 +300,30 @@ func (game *Game) finishRound() {
 	game.deck = deck
 	game.community = append(game.CommunityCards(), newCards.Cards...)
 	game.round++
+}
+
+func (game *Game) findBestHand(allCards []cards.Card) (Hand, []cards.Card) {
+	combinations := combin.NewCombinationGenerator(7, 5)
+	combinationMapping := make([]int, 5)
+	checkedHand := make([]cards.Card, 5)
+	bestHand := CreateLowGuardian()
+	bestCombination := make([]cards.Card, 5)
+	for combinations.Next() {
+		combinations.Combination(combinationMapping)
+		for index, value := range combinationMapping {
+			checkedHand[index] = allCards[value]
+		}
+		recognisedHand, e := RecogniseHand(cards.DeckOf(checkedHand...))
+		if e != nil {
+			continue
+		}
+		result := CompareHands(bestHand, recognisedHand)
+		if result != FirstWins {
+			bestHand = recognisedHand
+			copy(bestCombination, checkedHand)
+		}
+	}
+	return bestHand, bestCombination
 }
 
 func (game *Game) changeActivePlayerToFirstNonFolded() {
@@ -309,6 +354,7 @@ type VisibleGameState struct {
 	Players      []TexasPlayerPublicInfo
 	Round        TexasHoldEmRound
 	ActivePlayer *TexasPlayerPublicInfo
+	Winner       *TexasPlayerPublicInfo
 	Dealer       TexasPlayerPublicInfo
 	Community    []cards.Card
 }
@@ -322,9 +368,11 @@ func (gameState VisibleGameState) Print() {
 	}
 	fmt.Printf("Players:\n")
 	for _, player := range gameState.Players {
-		fmt.Printf("- %s", player)
+		fmt.Printf("- %s\n", player)
 	}
-	fmt.Printf("Now playing: %s\n", gameState.ActivePlayer.Name)
+	if gameState.ActivePlayer != nil {
+		fmt.Printf("Now playing: %s\n", gameState.ActivePlayer.Name)
+	}
 }
 
 type TexasPlayerPublicInfo struct {
@@ -333,6 +381,8 @@ type TexasPlayerPublicInfo struct {
 	HasFolded  bool
 	CurrentPot int64
 	Cards      []cards.Card
+	Hand       *Hand
+	BestCards  []cards.Card
 }
 
 func (playerPublicInfo TexasPlayerPublicInfo) String() string {
@@ -340,30 +390,44 @@ func (playerPublicInfo TexasPlayerPublicInfo) String() string {
 	if playerPublicInfo.HasFolded {
 		foldedString = "has folded"
 	}
-	return fmt.Sprintf("%s, pot: %d$, %s, total: %d$, Cards: %s\n",
+	playerString := fmt.Sprintf("%s, pot: %d$, %s, total: %d$",
 		playerPublicInfo.Name,
 		playerPublicInfo.CurrentPot,
 		foldedString,
-		playerPublicInfo.Money,
-		playerPublicInfo.Cards)
+		playerPublicInfo.Money)
+	if playerPublicInfo.Hand != nil {
+		playerString += fmt.Sprintf(", Cards: %s, Hand: %s, Combination: %s",
+			playerPublicInfo.Cards,
+			playerPublicInfo.Hand,
+			playerPublicInfo.BestCards,
+		)
+	}
+	return playerString
 }
 
 type TexasPlayer struct {
-	player     *Player
-	hand       cards.Deck
-	hasFolded  bool
-	hasPlayed  bool
-	currentPot int64
+	player          *Player
+	hand            cards.Deck
+	bestCombination []cards.Card
+	bestHand        *Hand
+	hasFolded       bool
+	hasPlayed       bool
+	currentPot      int64
 }
 
 func (texasPlayer TexasPlayer) GetPublicInfo() TexasPlayerPublicInfo {
-	return TexasPlayerPublicInfo{
+	playerInfo := TexasPlayerPublicInfo{
 		Name:       texasPlayer.player.name,
 		Money:      texasPlayer.player.money,
 		HasFolded:  texasPlayer.hasFolded,
 		CurrentPot: texasPlayer.currentPot,
-		Cards:      []cards.Card{},
 	}
+	if !texasPlayer.hasFolded && texasPlayer.bestHand != nil {
+		playerInfo.Cards = texasPlayer.hand.Cards
+		playerInfo.BestCards = texasPlayer.bestCombination
+		playerInfo.Hand = texasPlayer.bestHand
+	}
+	return playerInfo
 }
 
 func (texasPlayer TexasPlayer) String() string {
