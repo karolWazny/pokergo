@@ -212,6 +212,9 @@ func (game *Game) GetVisibleGameState() VisibleGameState {
 	visibleGameState.Round = game.round
 	visibleGameState.Dealer = game.players[len(game.players)-1].GetPublicInfo()
 	visibleGameState.Community = game.CommunityCards()
+	if game.winner != nil {
+		visibleGameState.Winner = game.winner.player.name
+	}
 	return visibleGameState
 }
 
@@ -354,7 +357,7 @@ type VisibleGameState struct {
 	Players      []TexasPlayerPublicInfo
 	Round        TexasHoldEmRound
 	ActivePlayer *TexasPlayerPublicInfo
-	Winner       *TexasPlayerPublicInfo
+	Winner       string
 	Dealer       TexasPlayerPublicInfo
 	Community    []cards.Card
 }
@@ -372,6 +375,9 @@ func (gameState VisibleGameState) Print() {
 	}
 	if gameState.ActivePlayer != nil {
 		fmt.Printf("Now playing: %s\n", gameState.ActivePlayer.Name)
+	}
+	if gameState.Winner != "" {
+		fmt.Printf("Winner: %s\n", gameState.Winner)
 	}
 }
 
