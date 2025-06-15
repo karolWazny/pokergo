@@ -1,4 +1,4 @@
-package poker
+package pokergo
 
 import "strconv"
 

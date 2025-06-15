@@ -1,9 +1,8 @@
-package poker
+package pokergo
 
 import (
 	"errors"
 	"fmt"
-	"github.com/karolWazny/poker-go/cards"
 	"sort"
 )
 
@@ -33,7 +32,7 @@ const (
 
 type Hand struct {
 	handType   HandType
-	comparison []cards.Rank
+	comparison []Rank
 }
 
 func (h Hand) String() string {
@@ -85,7 +84,7 @@ func CompareHands(first Hand, second Hand) ComparisonResult {
 	return Tie
 }
 
-func RecogniseHand(deck cards.Deck) (Hand, error) {
+func RecogniseHand(deck Deck) (Hand, error) {
 	if len(deck.Cards) != 5 {
 		return Hand{}, errors.New("invalid poker RecogniseHand size")
 	}
@@ -93,7 +92,7 @@ func RecogniseHand(deck cards.Deck) (Hand, error) {
 	isFlush := isFlush(deck)
 	{
 		isStraight, occurrences := isStraight(occurrences)
-		if isStraight && isFlush && occurrences[0].Rank == cards.Ace {
+		if isStraight && isFlush && occurrences[0].Rank == Ace {
 			return buildStraightHand(RoyalFlush), nil
 		}
 		if isStraight && isFlush {
@@ -128,24 +127,24 @@ func RecogniseHand(deck cards.Deck) (Hand, error) {
 func CreateLowGuardian() Hand {
 	return Hand{
 		handType:   LowestHandGuardian,
-		comparison: []cards.Rank{},
+		comparison: []Rank{},
 	}
 }
 
 type rankOccurrences struct {
-	Rank        cards.Rank
+	Rank        Rank
 	Occurrences int
 }
 
-func buildStraightHand(handType HandType, comparisons ...cards.Rank) Hand {
+func buildStraightHand(handType HandType, comparisons ...Rank) Hand {
 	return Hand{
 		handType:   handType,
 		comparison: comparisons,
 	}
 }
 
-func isFlush(deck cards.Deck) bool {
-	suits := map[cards.Suit]bool{}
+func isFlush(deck Deck) bool {
+	suits := map[Suit]bool{}
 	for _, card := range deck.Cards {
 		suits[card.Suit()] = true
 	}
@@ -155,7 +154,7 @@ func isFlush(deck cards.Deck) bool {
 func isStraight(occurrences []rankOccurrences) (bool, []rankOccurrences) {
 	isStraight := true
 	for i := range len(occurrences) - 1 {
-		if occurrences[i].Rank == cards.Ace && occurrences[i+1].Rank == cards.Five {
+		if occurrences[i].Rank == Ace && occurrences[i+1].Rank == Five {
 			continue
 		}
 		if int(occurrences[i].Rank-occurrences[i+1].Rank) != 1 {
@@ -163,14 +162,14 @@ func isStraight(occurrences []rankOccurrences) (bool, []rankOccurrences) {
 			break
 		}
 	}
-	if isStraight && occurrences[0].Rank == cards.Ace && occurrences[1].Rank == cards.Five {
+	if isStraight && occurrences[0].Rank == Ace && occurrences[1].Rank == Five {
 		return isStraight, append(occurrences[1:], occurrences[0])
 	}
 	return isStraight, occurrences
 }
 
-func buildOrderedOccurrencesSlice(deck cards.Deck) []rankOccurrences {
-	unique := map[cards.Rank][]cards.Suit{}
+func buildOrderedOccurrencesSlice(deck Deck) []rankOccurrences {
+	unique := map[Rank][]Suit{}
 	for _, card := range deck.Cards {
 		unique[card.Rank()] = append(unique[card.Rank()], card.Suit())
 	}
@@ -192,7 +191,7 @@ func buildOrderedOccurrencesSlice(deck cards.Deck) []rankOccurrences {
 }
 
 func buildHandWithKickers(occurrences []rankOccurrences, handType HandType) Hand {
-	comparison := make([]cards.Rank, len(occurrences))
+	comparison := make([]Rank, len(occurrences))
 
 	for i, occurrence := range occurrences {
 		comparison[i] = occurrence.Rank

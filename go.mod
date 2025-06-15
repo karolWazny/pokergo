@@ -1,4 +1,4 @@
-module github.com/karolWazny/poker-go
+module github.com/karolWazny/pokergo
 
 go 1.24.0
 

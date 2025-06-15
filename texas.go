@@ -1,10 +1,9 @@
-package poker
+package pokergo
 
 import (
 	"errors"
 	"fmt"
 	"gonum.org/v1/gonum/stat/combin"
-	"online-poker/cards"
 	"slices"
 	"strconv"
 )
@@ -69,7 +68,7 @@ func (table *Table) StartGame() Game {
 	table.dealerIndex = (table.dealerIndex + 1) % len(table.players)
 	orderedPlayers := append(table.players[table.dealerIndex+1:], table.players[:table.dealerIndex+1]...)
 	texasPlayers := make([]*TexasPlayer, len(orderedPlayers))
-	deck := cards.CreateDeck().Shuffled()
+	deck := CreateDeck().Shuffled()
 	for i, player := range orderedPlayers {
 		hand, smallerDeck := deck.Deal(2)
 		deck = smallerDeck
@@ -89,7 +88,7 @@ func (table *Table) StartGame() Game {
 		lastBet:           table.bigBlind,
 		deck:              deck,
 		activePlayerIndex: 2,
-		community:         make([]cards.Card, 0),
+		community:         make([]Card, 0),
 		round:             PREFLOP,
 	}
 }
@@ -98,9 +97,9 @@ type Game struct {
 	players           []*TexasPlayer
 	winner            *TexasPlayer
 	lastBet           int64
-	deck              cards.Deck
+	deck              Deck
 	activePlayerIndex int
-	community         []cards.Card
+	community         []Card
 	round             TexasHoldEmRound
 }
 
@@ -124,7 +123,7 @@ func (game *Game) Fold() error {
 		return errors.New("fold action not available")
 	}
 	game.unsafeGetCurrentPlayer().hasFolded = true
-	game.unsafeGetCurrentPlayer().hand = cards.DeckOf()
+	game.unsafeGetCurrentPlayer().hand = DeckOf()
 	if game.playersInGame() == 1 {
 		// finish game
 		lastActivePlayerIndex := slices.IndexFunc(game.players, func(player *TexasPlayer) bool {
@@ -193,7 +192,7 @@ func (game *Game) AvailableActions() []TexasHoldEmAction {
 	return availableActions
 }
 
-func (game *Game) CommunityCards() []cards.Card {
+func (game *Game) CommunityCards() []Card {
 	return game.community
 }
 
@@ -305,18 +304,18 @@ func (game *Game) finishRound() {
 	game.round++
 }
 
-func (game *Game) findBestHand(allCards []cards.Card) (Hand, []cards.Card) {
+func (game *Game) findBestHand(allCards []Card) (Hand, []Card) {
 	combinations := combin.NewCombinationGenerator(7, 5)
 	combinationMapping := make([]int, 5)
-	checkedHand := make([]cards.Card, 5)
+	checkedHand := make([]Card, 5)
 	bestHand := CreateLowGuardian()
-	bestCombination := make([]cards.Card, 5)
+	bestCombination := make([]Card, 5)
 	for combinations.Next() {
 		combinations.Combination(combinationMapping)
 		for index, value := range combinationMapping {
 			checkedHand[index] = allCards[value]
 		}
-		recognisedHand, e := RecogniseHand(cards.DeckOf(checkedHand...))
+		recognisedHand, e := RecogniseHand(DeckOf(checkedHand...))
 		if e != nil {
 			continue
 		}
@@ -359,7 +358,7 @@ type VisibleGameState struct {
 	ActivePlayer *TexasPlayerPublicInfo
 	Winner       string
 	Dealer       TexasPlayerPublicInfo
-	Community    []cards.Card
+	Community    []Card
 }
 
 func (gameState VisibleGameState) Print() {
@@ -386,9 +385,9 @@ type TexasPlayerPublicInfo struct {
 	Money      int64
 	HasFolded  bool
 	CurrentPot int64
-	Cards      []cards.Card
+	Cards      []Card
 	Hand       *Hand
-	BestCards  []cards.Card
+	BestCards  []Card
 }
 
 func (playerPublicInfo TexasPlayerPublicInfo) String() string {
@@ -413,8 +412,8 @@ func (playerPublicInfo TexasPlayerPublicInfo) String() string {
 
 type TexasPlayer struct {
 	player          *Player
-	hand            cards.Deck
-	bestCombination []cards.Card
+	hand            Deck
+	bestCombination []Card
 	bestHand        *Hand
 	hasFolded       bool
 	hasPlayed       bool
