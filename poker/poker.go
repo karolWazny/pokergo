@@ -3,7 +3,7 @@ package poker
 import (
 	"errors"
 	"fmt"
-	"online-poker/cards"
+	"github.com/karolWazny/poker-go/cards"
 	"sort"
 )
 

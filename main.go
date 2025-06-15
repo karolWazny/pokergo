@@ -1,7 +1,7 @@
 package main
 
 import (
-	"online-poker/poker"
+	"github.com/karolWazny/poker-go/poker"
 )
 
 //TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
