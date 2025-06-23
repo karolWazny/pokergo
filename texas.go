@@ -51,6 +51,10 @@ type Table struct {
 	dealerIndex int
 }
 
+func (table *Table) Players() []*Player {
+	return table.players
+}
+
 func NewTable(smallBlind int64, bigBlind int64) Table {
 	return Table{
 		players:     make([]*Player, 0),
