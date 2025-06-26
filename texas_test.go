@@ -119,13 +119,27 @@ func TestWhenEverybodyFoldsRemainingPlayerWins(t *testing.T) {
 	}
 }
 
+func TestErrorIsRaisedWhenDuplicatePlayerIsAdded(t *testing.T) {
+	table := NewTable(20, 50)
+	first := NewPlayer("firstplayer", 1500)
+	err := table.AddPlayer(&first)
+	if err != nil {
+		t.Errorf("There should be no error adding non-duplicate player to table")
+	}
+	duplicate := NewPlayer("FIRSTPLAYER", 1500)
+	err = table.AddPlayer(&duplicate)
+	if err == nil {
+		t.Errorf("There should be an error adding duplicate player to table")
+	}
+}
+
 func prepareThreePlayerTable() Table {
 	table := NewTable(20, 50)
 	master := NewPlayer("MasterOfDisaster", 1500)
-	table.AddPlayer(&master)
+	_ = table.AddPlayer(&master)
 	badman := NewPlayer("BadMannTM", 1500)
-	table.AddPlayer(&badman)
+	_ = table.AddPlayer(&badman)
 	hanku := NewPlayer("hank.prostokat", 1500)
-	table.AddPlayer(&hanku)
+	_ = table.AddPlayer(&hanku)
 	return table
 }

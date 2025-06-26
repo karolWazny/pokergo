@@ -6,6 +6,7 @@ import (
 	"gonum.org/v1/gonum/stat/combin"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 type TexasHoldEmAction string
@@ -64,8 +65,14 @@ func NewTable(smallBlind int64, bigBlind int64) Table {
 	}
 }
 
-func (table *Table) AddPlayer(player *Player) {
+func (table *Table) AddPlayer(player *Player) error {
+	for _, existingPlayer := range table.players {
+		if strings.ToUpper(existingPlayer.Name()) == strings.ToUpper(player.Name()) {
+			return errors.New("player already exists")
+		}
+	}
 	table.players = append(table.players, player)
+	return nil
 }
 
 func (table *Table) StartGame() Game {
